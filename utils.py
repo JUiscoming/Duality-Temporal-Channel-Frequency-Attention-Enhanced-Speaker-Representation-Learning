@@ -14,6 +14,8 @@ import itertools
 from collections import defaultdict
 from copy import deepcopy
 from sklearn.metrics import roc_curve
+from scipy.optimize import brentq
+from scipy.interpolate import interp1d
 
 ##########################################
 #           Initialize Logger            #
@@ -288,10 +290,19 @@ class EarlyStopper():
         return self.count
 
 
-def compute_eer(distances, labels):
-    fprs, tprs, _ = roc_curve(labels, distances)
-    eer = fprs[np.nanargmin(np.absolute((1 - tprs) - fprs))]
-    return eer
+def compute_eer(scores, labels):
+    fpr, tpr, thresholds    = roc_curve(labels, scores, pos_label=1);print(thresholds)
+    fnr                     = 1-tpr
+    
+    min_index               = np.argmin(np.abs(fpr-fnr))
+    diff                    = min(list(np.abs(fpr - fnr)))
+    
+    print(min_index, fpr[min_index], fnr[min_index])
+    
+    eer                     = brentq(lambda x : 1. - x - interp1d(fpr, tpr)(x), 0., 1.)
+    threshold               = interp1d(fpr, thresholds)(eer)
+    print(eer, threshold)
+    return eer, fpr, tpr, threshold
  
 
 class ValueSaver:

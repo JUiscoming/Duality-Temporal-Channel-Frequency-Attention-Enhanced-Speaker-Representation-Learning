@@ -19,4 +19,4 @@ tr.train()
 # 4. test
 with open(config['e_q_l_triplet_file'], 'rb') as f:
     enroll_query_label_triplet = pickle.load(f)
-tr.verify(0, enroll_query_label_triplet, 'valid')
+tr.verify(config['epoch'], enroll_query_label_triplet, 'valid')

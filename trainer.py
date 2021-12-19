@@ -122,8 +122,7 @@ class Trainer(object):
             embedding_q = self.models['SV'](query)
             
             # 3. calculate similarity btw. two embeddings
-            # score = torch.cdist(embedding_e, embedding_q, p=2)
-            score = 1-F.cosine_similarity(embedding_e, embedding_q)
+            score = F.cosine_similarity(embedding_e, embedding_q)
             
         return score.item()
 
@@ -184,7 +183,7 @@ class Trainer(object):
             
             # 4-2. upload data at tensorboard
             for k, v in value_saver[epoch].items():
-                pass_key = ['actual', 'predicted', 'score', 'label']
+                pass_key = ['actual', 'predicted', 'score', 'label', 'fprs', 'tprs']
                 while pass_key:
                     if pass_key.pop() in k.split('/'):
                         break
@@ -202,9 +201,7 @@ class Trainer(object):
         assert mode == 'valid' or mode == 'test'
         # enrollment_utterance & query_utterance pair indices at self.dataset[sample_idx]; [(e_index0, q_index0, True), (e_index1, q_index1, False), ...]
         
-        if mode == 'valid' and self.config['loaded_epoch'] > 0:
-            self.load_models(self.config['loaded_epoch'])
-        if mode == 'test' and epoch > 0:
+        if epoch > 0:
             self.load_models(epoch)
                 
         self.init_dataset(mode)
@@ -213,25 +210,33 @@ class Trainer(object):
         score_list, label_list = [], []
         
         verify_step_iterator = tqdm(enroll_query_label_triplet, desc="Iteration", ascii=True, mininterval=2)
+        log_step = len(verify_step_iterator) // (10 if len(verify_step_iterator) >= 10 else 1)
         
         # label is given
         if len(enroll_query_label_triplet[0]) == 3:
             for step_idx, (e_idx, q_idx, label) in enumerate(verify_step_iterator):
                 score = self.verification_step(dataset[e_idx], dataset[q_idx])
+                if (step_idx+1) % log_step == 0:
+                    self.logger.info(f'{step_idx+1}/{len(verify_step_iterator)}: score: {score}')
                 score_list.append(score)
                 label_list.append(label)
-            eer = compute_eer(score_list, label_list)
+            eer, fprs, tprs, threshold = compute_eer(score_list, label_list)
+            self.logger.info(f'fprs: {fprs}')
+            self.logger.info(f'tprs: {tprs}')
+            self.logger.info(f'eer: {eer}')
+            self.logger.info(f'threshold: {threshold}')
             
-            return {f'{mode}/eer': eer}
+            return {f'{mode}/eer': eer, f'{mode}/fprs': fprs, f'{mode}/tprs': tprs, f'{mode}/threshold': threshold}
         
         # label is not given
         for step_idx, (e_idx, q_idx) in enumerate(verify_step_iterator):
             score = self.verification_step(dataset[e_idx], dataset[q_idx])
+            if (step_idx+1) % log_step == 0:
+                self.logger.info(f'{step_idx+1}/{len(verify_step_iterator)}: score: {score}')
             score_list.append(score)
         
         return {f'{mode}/score': score_list}
-            
-                  
+  
 
     ##### save & load & remove  #####
     ##### 1) model              #####
