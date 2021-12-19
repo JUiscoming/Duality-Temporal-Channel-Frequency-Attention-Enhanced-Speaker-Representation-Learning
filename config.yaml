@@ -1,0 +1,45 @@
+# feature
+feature_kwargs:
+  sample_rate: 16000
+  n_fft: 400 # <= frame_len
+  frame_len: 400
+  shift_len: 160
+  n_mels: 80
+  log_mel: False
+feature_name_list: mel_spectrogram
+fixed_sample_len: 32000
+
+# exp_arguments
+seed: 1234
+gpu_idx: '0,1'
+save_step: 1
+log_num: 25
+valid_step: 0
+emb_dim: 512
+n_spks: 1270
+
+# AAM-Softmas
+margin: 0.2
+scale: 30
+
+# exp_id and dirs
+exp_id: 211218_SV_1
+train_dir: '/home/disk2/Wook/data/Korean/train'
+valid_dir: '/home/disk2/Wook/data/Korean/dev'
+test_dir: 'D:/SV/dataset/test'
+e_q_l_triplet_file: '/home/wook/sv_ju/valid.pkl'
+
+# optimizer
+epoch: 20
+batch_size: 128 # 1gpu-300
+loaded_epoch: 0
+init_lr: 1e-3
+end_lr: 1e-6
+max_grad_norm: 5.
+weight_decay: 2e-5
+
+# lrs
+step_size: 1
+
+# dataloader
+num_workers: 4
