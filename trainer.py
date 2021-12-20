@@ -132,19 +132,24 @@ class Trainer(object):
     ##### 2) verify             #####
     #################################            
     def train(self):
+        # 1. initialize the dataset and dataloader
         self.init_dataset('train')
-        self.init_optim_and_lrs()
-        if len(self.config['gpu_idx'].split(',')) > 1:
-            self.multi_gpu(self.config['gpu_idx'])
         self.dataloader['train'] = DataLoader(self.dataset['train'], self.config['batch_size'], True, num_workers=self.config['num_workers'])
+        
         # valid utterance pair information
         with open(self.config['e_q_l_triplet_file'], 'rb') as f:
             enroll_query_label_triplet = pickle.load(f)
 
+        # 2. load models
+        self.init_optim_and_lrs()
         if self.config['loaded_epoch'] > 0:
-            value_saver = self.load_models(self.config['loaded_epoch'])
+            self.load_models(self.config['loaded_epoch'])
+            value_saver = self.load_others(self.config['loaded_epoch'])
         else:
             value_saver = ValueSaver() # save loss, metric
+        
+        if len(self.config['gpu_idx'].split(',')) > 1:
+            self.multi_gpu(self.config['gpu_idx'])
         log_step = len(self.dataloader['train']) if self.config['log_num'] == 0 else len(self.dataloader['train']) // self.config['log_num']
 
         
@@ -226,7 +231,7 @@ class Trainer(object):
             self.logger.info(f'eer: {eer}')
             self.logger.info(f'threshold: {threshold}')
             
-            return {f'{mode}/eer': eer, f'{mode}/fprs': fprs, f'{mode}/tprs': tprs, f'{mode}/threshold': threshold}
+            return {f'{mode}/eer': eer, f'{mode}/fprs': fprs, f'{mode}/tprs': tprs, f'{mode}/threshold': threshold, f'{mode}/score': score_list, f'{mode}/label': label_list}
         
         # label is not given
         for step_idx, (e_idx, q_idx) in enumerate(verify_step_iterator):
@@ -277,12 +282,14 @@ class Trainer(object):
         state = {"epoch": epoch,
                  "optimizer": {},
                  "lrs": {},
-                 "value_saver": value_saver}
+                 "value_saver": value_saver,
+                 "aam_softmax_weight": None}
 
         for key, opt in self.optimizer.items():
             state['optimizer'][key] = opt.state_dict()
         for key, lrs in self.lrs.items():
             state['lrs'][key] = lrs.state_dict()
+        state["aam_softmax_weight"] = self.AAM_Softmax.state_dict()
         
         filename = f'others_e{epoch}.pt'
         file = os.path.join(self.config['model_dir'], filename)
@@ -300,6 +307,7 @@ class Trainer(object):
             self.lrs[key].load_state_dict(state['lrs'][key])
         if state["value_saver"] != None:
             return state["value_saver"]
+        self.AAM_Softmax.load_state_dict(state["aam_softmax_weight"])
 
 
     def remove_others(self, epoch):

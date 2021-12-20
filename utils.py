@@ -343,13 +343,13 @@ class ValueSaver:
         return self.memory[epoch_index]
 
 
-def enroll_query_label_triplet_extraction(dev_dir, txt_file, output_file):
+def enroll_query_label_triplet_extraction(dev_dir, txt_file):
     wav_file_list = get_files(dev_dir, '.wav', True)
     wav_file_dict = {os.path.splitext(os.path.basename(wav_file))[0][6:]: idx for idx, wav_file in enumerate(wav_file_list)}
     triplet_list = []
-    not_exist_file_txt = 'D:\\SV\\dataset\\not_exist.txt'
-    not_ex_f = open(not_exist_file_txt, 'w')
     line_idx = 0
+    non_exist_count = 0
+    not_ex_f = open('./not_exist.txt', 'w')
 
     with open(txt_file, "r") as f:
         while True:
@@ -359,16 +359,22 @@ def enroll_query_label_triplet_extraction(dev_dir, txt_file, output_file):
             enroll, query, label = line.rstrip().split(' ')
             label = True if label[0] == 't' else False
             try: enroll = wav_file_dict[enroll]
-            except: not_ex_f.write(f'{line_idx}: {enroll}\n')
+            except: 
+                non_exist_count += 1
+                not_ex_f.write(f'{line_idx}: {enroll}, line: {line.rstrip()}\n')
+                continue
             else:
                 try: query = wav_file_dict[query]
-                except: not_ex_f.write(f'{line_idx}: {query}\n')
+                except:
+                    non_exist_count += 1
+                    not_ex_f.write(f'{line_idx}: {query}, line: {line.rstrip()}\n')
+                    continue
                 else: triplet_list.append((enroll, query, label))
             line_idx += 1
-    
-    with open(output_file, 'wb') as f:
-        pickle.dump(triplet_list, f, 4)
     not_ex_f.close()
+    
+    print(f'non_exist_count: {non_exist_count}, # of utterance pairs: {len(triplet_list)}')
+    return triplet_list
 
 
 if __name__ == '__main__':
