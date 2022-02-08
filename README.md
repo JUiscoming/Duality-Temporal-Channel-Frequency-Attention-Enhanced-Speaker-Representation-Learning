@@ -1,7 +1,11 @@
 # Duality-Temporal-Channel-Frequency-Attention-Enhanced-Speaker-Representation-Learning
-Unofficial implementation of Duality Temporal Channel Frequency Attention Enhanced Speaker Representation Learning arXiv https://arxiv.org/abs/2110.06565
+Unofficial implementation of Duality Temporal Channel Frequency Attention Enhanced Speaker Representation Learning (ASRU 2021)
 
-I used this model at hackathon (speaker verification). If you want to use this code, you need to modify some part of code.
+- L. Zhang, Q. Wang and L. Xie, "Duality Temporal-Channel-Frequency Attention Enhanced Speaker Representation Learning," 2021 IEEE Automatic Speech Recognition and Understanding Workshop (ASRU), 2021, pp. 206-213, doi: 10.1109/ASRU51503.2021.9688243.
+
+- arXiv: https://arxiv.org/abs/2110.06565
+
+If you want to use this code, you need to modify some part of code.
 
 - label_extraction at data_loader.py
 - enroll_query_label_triplet_extraction at utils.py
