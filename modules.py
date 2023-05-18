@@ -71,8 +71,8 @@ class DTCFAttentionBlock(nn.Module):
 
         # 3. calculate temporal and frequency attention masking coef.
         attn_t, attn_f = torch.split(z, [T, F], dim=2)
-        attn_t = self.conv_time_attn(attn_t).permute(0, 1, 3, 2).contiguous() # (B, C, T, 1)
-        attn_f = self.conv_freq_attn(attn_f) # (B, C, F, 1)
+        attn_t = self.sigmoid(self.conv_time_attn(attn_t).permute(0, 1, 3, 2).contiguous()) # (B, C, T, 1)
+        attn_f = self.sigmoid(self.conv_freq_attn(attn_f)) # (B, C, F, 1)
         attn = attn_t * attn_f
 
         # 4. apply TF attention
